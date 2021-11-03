@@ -1,0 +1,50 @@
+version: '3'
+
+networks:
+  reverse-proxy-backend:
+    external: true
+  db:
+    driver: bridge
+    internal: true
+
+services:
+  tasks:
+    image: tasks
+    container_name: tasks
+    command: >
+      bash -c
+        "for i in `seq 1 30`; do
+          ./start.sh &&
+          s=$$? && break || s=$$?;
+          echo \"Tried $$i times. Waiting 5 seconds...\";
+          sleep 5;
+        done; (exit $$s)"
+    restart: unless-stopped
+    networks:
+      - reverse-proxy-backend
+      - db
+    volumes:
+      - './volumes/user-avatars:/app/public/user-avatars'
+      - './volumes/project-background-images:/app/public/project-background-images'
+      - './volumes/attachments:/app/public/attachments'
+    #ports:
+    #  - ${PORT}:1337
+    environment:
+      - BASE_URL=${PROTOCOL}${BASE_URL}
+      - DATABASE_URL=postgresql://postgres@tasks-db/planka
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - tasks-db
+
+  tasks-db:
+    image: postgres:alpine
+    container_name: tasks-db
+    restart: unless-stopped
+    networks:
+      - db
+    volumes:
+      - './volumes/db-data:/var/lib/postgresql/data'
+    environment:
+      - POSTGRES_DB=planka
+      - POSTGRES_HOST_AUTH_METHOD=trust
+
