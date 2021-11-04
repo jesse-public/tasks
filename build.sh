@@ -3,7 +3,7 @@ cd planka
 git pull
 
 # node:latest is not supported by planka at this time
-sed 's/FROM node AS/FROM node:lts AS/' Dockerfile
+sed -i 's/FROM node AS/FROM node:lts AS/g' Dockerfile
 
 cp ../server/config/env/production.js ./server/config/env/production.js
 cp ../server/config/security.js ./server/config/security.js
